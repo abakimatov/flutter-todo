@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:my_app/screens/add_task_dialog.dart';
 import 'package:my_app/screens/events_screen.dart';
+import 'package:my_app/screens/tasks_screen.dart';
+import 'package:my_app/screens/add_task_dialog.dart';
+import 'package:my_app/screens/add_event_dialog.dart';
 import 'package:my_app/widgets/custom_button.dart';
-import 'screens/tasks_screen.dart';
 
 void main() => runApp(MyApp());
 
@@ -24,8 +25,18 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  PageController _pageController = PageController();
+
+  double currentPage = 0;
+
   @override
   Widget build(BuildContext context) {
+    _pageController.addListener(() {
+      setState(() {
+        currentPage = _pageController.page;
+      });
+    });
+
     return Scaffold(
       body: Stack(
         children: <Widget>[
@@ -46,7 +57,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 return Dialog(
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.all(Radius.circular(12))),
-                    child: AddTaskDialog());
+                    child:
+                        currentPage == 0 ? AddTaskDialog() : AddEventDialog());
               });
         },
         child: Icon(Icons.add),
@@ -75,19 +87,38 @@ class _MyHomePageState extends State<MyHomePage> {
       children: <Widget>[
         Expanded(
           child: CustomButton(
-              onPressed: () {},
+              onPressed: () {
+                _pageController.previousPage(
+                    duration: Duration(milliseconds: 500),
+                    curve: Curves.bounceInOut);
+              },
               buttonText: "Tasks",
-              color: Theme.of(context).accentColor,
-              textColor: Colors.white),
+              color: currentPage < 0.5
+                  ? Theme.of(context).accentColor
+                  : Colors.white,
+              textColor: currentPage < 0.5
+                  ? Colors.white
+                  : Theme.of(context).accentColor,
+              borderColor: currentPage < 0.5
+                  ? Colors.transparent
+                  : Theme.of(context).accentColor),
         ),
         SizedBox(width: 32),
         Expanded(
             child: CustomButton(
-          onPressed: () {},
+          onPressed: () {
+            _pageController.nextPage(
+                duration: Duration(milliseconds: 500),
+                curve: Curves.bounceInOut);
+          },
           buttonText: "Events",
-          color: Colors.white,
-          textColor: Theme.of(context).accentColor,
-          borderColor: Theme.of(context).accentColor,
+          color:
+              currentPage > 0.5 ? Theme.of(context).accentColor : Colors.white,
+          textColor:
+              currentPage > 0.5 ? Colors.white : Theme.of(context).accentColor,
+          borderColor: currentPage > 0.5
+              ? Colors.transparent
+              : Theme.of(context).accentColor,
         )),
       ],
     );
@@ -103,7 +134,11 @@ class _MyHomePageState extends State<MyHomePage> {
             child: Text("Monday",
                 style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold))),
         Padding(padding: const EdgeInsets.all(24.0), child: _buttons(context)),
-        Expanded(child: EventsScreen())
+        Expanded(
+            child: PageView(
+          controller: _pageController,
+          children: <Widget>[TasksScreen(), EventsScreen()],
+        ))
       ],
     );
   }
